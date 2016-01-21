@@ -47,14 +47,44 @@ class Spellchecker
   
   #generate all correction candidates at an edit distance of 1 from the input word.
   def edits1(word)
-    
+    len = word.length
+    counter = len-2
     deletes    = []
+	for the_index in 0..len-1
+	the_string = word.dup
+	the_string.slice!(the_index)
+	deletes.push(the_string)
+	end 
     #all strings obtained by deleting a letter (each letter)
+	
     transposes = []
+	if counter>0
+	(0..counter).each do |the_index|
+	the_string=word.dup
+	the_string[the_index+1]=word[the_index]
+	the_string[the_index]=word[the_index+1]
+	transposes.push(the_string)
+	end #end of the loop
+       end ## end of the if 
     #all strings obtained by switching two consecutive letters
     inserts = []
+	for the_index in 0..len
+	ALPHABET.each_char do |lett|
+	the_string = word.dup
+	the_string=the_string.insert(the_index,lett)
+	inserts.push(the_string)
+	end
+	end 
+
+
+ 	
     # all strings obtained by inserting letters (all possible letters in all possible positions)
     replaces = []
+
+	 	(len+1).times {|the_index| ALPHABET.each_byte {|l| inserts << word[0...the_index]+l.chr+word[the_index..-1] } }
+
+	 	(len+1).times {|the_index| ALPHABET.each_byte {|l| replaces << word[0...the_index]+l.chr+word[the_index..-1] } }
+
     #all strings obtained by replacing letters (all possible letters in all possible positions)
 
     return (deletes + transposes + replaces + inserts).to_set.to_a #eliminate duplicates, then convert back to array
@@ -64,13 +94,24 @@ class Spellchecker
   # find known (in dictionary) distance-2 edits of target word.
   def known_edits2 (word)
     # get every possible distance - 2 edit of the input word. Return those that are in the dictionary.
+	result =[]
+	ed1=edits(word)
+	ed1.each do |d|
+	s.concat(edits1(d))
+	end
+	#edits1(word).each {|e1| edits1(e1).each{
+	#|e2| result << e2 if @dictionary.has_key?(e2) }}.to_set.to_a
   end
+	
 
   #return subset of the input words (argument is an array) that are known by this dictionary
   def known(words)
-    return words.find_all {true } #find all words for which condition is true,
+    #return words.find_all {true } #find all words for which condition is true,
                                     #you need to figure out this condition
-    
+	the_result = words.find_all{|ww| @dictionary.has_key?(ww)}
+	the_result.empty? ? nil : the_result
+	    
+
   end
 
 
@@ -82,6 +123,19 @@ class Spellchecker
   # returns distance-2 replacements sorted by descending frequency in the model
   # else returns nil
   def correct(word)
+	passed=[]
+	passed=known([word])
+
+	if(passed)
+		if (passed.length==1)
+		
+			return passed
+		end 
+	end 
+
+
+		
+	
   end
     
   
