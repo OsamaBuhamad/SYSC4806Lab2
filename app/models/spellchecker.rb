@@ -40,6 +40,8 @@ class Spellchecker
 	return count 
   end
 
+
+
   #lookup frequency of a word, a simple lookup in the @dictionary Hash
   def lookup(word)
 	return @dictionary[word]
@@ -80,10 +82,17 @@ class Spellchecker
  	
     # all strings obtained by inserting letters (all possible letters in all possible positions)
     replaces = []
+	for the_index in 0..len-1
+		ALPHABET.each_char do |lett|
+		the_string = word.dup
+		the_string[the_index]=lett
+		replaces.push(the_string)
+		end
+	end 
 
-	 	(len+1).times {|the_index| ALPHABET.each_byte {|l| inserts << word[0...the_index]+l.chr+word[the_index..-1] } }
+	 	#(len+1).times {|the_index| ALPHABET.each_byte {|l| inserts << word[0...the_index]+l.chr+word[the_index..-1] } }
 
-	 	(len+1).times {|the_index| ALPHABET.each_byte {|l| replaces << word[0...the_index]+l.chr+word[the_index..-1] } }
+	 	#(len+1).times {|the_index| ALPHABET.each_byte {|l| replaces << word[0...the_index]+l.chr+word[the_index..-1] } }
 
     #all strings obtained by replacing letters (all possible letters in all possible positions)
 
@@ -95,10 +104,11 @@ class Spellchecker
   def known_edits2 (word)
     # get every possible distance - 2 edit of the input word. Return those that are in the dictionary.
 	result =[]
-	ed1=edits(word)
+	ed1=edits1(word)
 	ed1.each do |d|
-	s.concat(edits1(d))
+	result.concat(edits1(d))
 	end
+	return (result)
 	#edits1(word).each {|e1| edits1(e1).each{
 	#|e2| result << e2 if @dictionary.has_key?(e2) }}.to_set.to_a
   end
@@ -108,9 +118,14 @@ class Spellchecker
   def known(words)
     #return words.find_all {true } #find all words for which condition is true,
                                     #you need to figure out this condition
-	the_result = words.find_all{|ww| @dictionary.has_key?(ww)}
-	the_result.empty? ? nil : the_result
-	    
+	#the_result = words.find_all {|ww| @dictionary.has_key?(ww)}
+	#the_result.empty? ? nil : the_result
+	   if words.class == Array
+    result = words.delete_if { |word| !@dictionary.has_key?(word) }.uniq
+    result.any? ? result : nil
+  else
+    words if @dictionary.has_key?(words)
+  end   
 
   end
 
@@ -122,22 +137,39 @@ class Spellchecker
   # else if there are valid distance-2 replacements,
   # returns distance-2 replacements sorted by descending frequency in the model
   # else returns nil
-  def correct(word)
-	passed=[]
-	passed=known([word])
+  def correct word
 
-	if(passed)
-		if (passed.length==1)
-		
-			return passed
-		end 
-	end 
+	#(known([word]) or known(edits1(word)) or known_edits2(word) or[word])
 
 
-		
+	passed = known([word])
 	
-  end
-    
-  
+	if passed
+		if passed.length == 1
+		return passed
+		end
+	end
+	
+	passed = known(edits1(word))
+	if !passed
+		passed = known_edits2(word)
+	end
+
+	if passed
+		the_secondPass = []
+		@dictionary.sort_by {|a_key,a_value| a_value}.reverse.each do |key, value|
+			the_string = key.dup
+			if passed.include?(the_string) == true
+			if the_secondPass.include?(the_string) == false
+				the_secondPass.push(the_string)
+		       	end
+			end
+	end
+	return the_secondPass
+	end
+	return nil
+  end    
+ 
+
 end
 
